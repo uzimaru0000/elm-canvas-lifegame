@@ -1,8 +1,9 @@
 'use struct'
 
-require('./index.html');
+import './index.html';
+import 'elm-canvas';
 
-const Elm = require('./Elm/Main.elm');
+import { Main } from './Elm/Main.elm';
 const main = document.getElementById('main');
 
-const app = Elm.Main.embed(main);
+const app = Main.embed(main);
