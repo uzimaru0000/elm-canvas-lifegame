@@ -1,4 +1,4 @@
-module Cell exposing (..)
+module Cell exposing (Cell, changeState, generator)
 
 import Random exposing (Generator)
 
@@ -10,7 +10,9 @@ type alias Cell =
 
 generator : Generator Cell
 generator =
-    Random.map Cell Random.bool
+    Random.int 0 1
+        |> Random.map ((==) 1)
+        |> Random.map Cell
 
 
 changeState : Int -> Cell -> Cell

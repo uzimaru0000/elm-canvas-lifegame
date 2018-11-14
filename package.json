@@ -1,25 +1,44 @@
 {
   "name": "elm-template",
   "version": "1.0.0",
-  "description": "",
+  "description": "## Initialize ``` $ npm i $ elm-package install ```",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server --hot --port 3000",
-    "build": "webpack"
+    "test": "elm-test",
+    "start": "webpack-dev-server --hot --port 3000 --mode development",
+    "build": "webpack --mode development"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "css-loader": "^0.28.7",
-    "elm-test": "^0.18.12",
-    "elm-webpack-loader": "^4.4.0",
+    "elm-test": "^0.19.0-beta12",
+    "elm-webpack-loader": "^5.0.0",
     "file-loader": "^1.1.6",
+    "mini-css-extract-plugin": "^0.4.4",
+    "node-sass": "^4.9.4",
+    "quagga": "^0.12.1",
+    "sass-loader": "^7.1.0",
     "style-loader": "^0.19.1",
-    "webpack": "^3.10.0",
-    "webpack-dev-server": "^2.9.7"
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.9"
   },
   "dependencies": {
-    "elm-canvas": "^1.0.0"
-  }
+    "bulma": "^0.7.2",
+    "elm-canvas": "^2.0.0",
+    "firebase": "^5.5.4"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uzimaru0000/canvas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uzimaru0000/canvas/issues"
+  },
+  "homepage": "https://github.com/uzimaru0000/canvas#readme"
 }

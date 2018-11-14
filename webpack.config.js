@@ -1,33 +1,62 @@
 'use strict'
 
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+
 module.exports = {
     entry: {
         app: './src/index.js'
     },
     output: {
-        path: `${__dirname}/docs`,
+        path: `${__dirname}/dist`,
         filename: '[name].js'
     },
     module: {
         rules: [
             {
                 test: /\.html$/,
-                exclude: /node_modules/,
+                exclude: [/node_modules/, /elm-stuff/ ],
                 use: 'file-loader?name=[name].[ext]'
             },
             {
-                test: /\.css$/,
-                use: [ 'style-loader', 'css-loader' ]
+                test: /\.scss$/,
+                use: [
+                    {
+                        loader: MiniCssExtractPlugin.loader,
+                    },
+                    "css-loader",
+                    "sass-loader"
+                ]
+            },
+            {
+                test: /\.png$/,
+                exclude: [ /node_modules/, /elm-stuff/ ],
+                use: 'file-loader?name=[name].[ext]'
             },
             {
                 test: /\.elm$/,
                 exclude: [ /node_modules/, /elm-stuff/ ],
-                use: 'elm-webpack-loader?debug=true'
+                use: [
+                    {
+                        loader: 'elm-webpack-loader',
+                        options: {
+                            debug: true
+                        },
+                    }
+                ]
             }
         ]
     },
+    plugins: [
+        new MiniCssExtractPlugin({
+            filename: "css/style.css",
+            chunkFilename: "css/[id].css"
+        })
+    ],
     devServer: {
         inline: true,
-        stats: 'errors-only'
+        stats: 'errors-only',
+        historyApiFallback: {
+            index: '/'
+        }
     }
 };

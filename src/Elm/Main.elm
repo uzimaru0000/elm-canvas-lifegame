@@ -1,15 +1,15 @@
-module Main exposing (..)
+module Main exposing (Model, Msg(..), calcPos, canvasHeight, canvasWidth, cellView, clearScreen, gameUpdate, gameView, init, main, subscriptions, update, view)
 
-import AnimationFrame exposing (times)
+import Browser exposing (element)
+import Browser.Events exposing (onAnimationFrame)
 import Canvas exposing (..)
-import Color exposing (Color)
-import Game exposing (Game)
+import CanvasColor exposing (Color)
 import Cell exposing (Cell)
+import Game exposing (Game)
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Random exposing (Generator)
-import Time exposing (Time)
-import Tuple
+import Time exposing (every)
 
 
 type alias Model =
@@ -19,24 +19,24 @@ type alias Model =
 
 
 type Msg
-    = AnimationFrame Time
+    = AnimationFrame Time.Posix
     | GameGen Game
 
 
 canvasHeight : Float
 canvasHeight =
-    320
+    640
 
 
 canvasWidth : Float
 canvasWidth =
-    320
+    640
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , subscriptions = subscriptions
         , view = view
@@ -45,13 +45,13 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    times AnimationFrame
+    onAnimationFrame AnimationFrame
 
 
 init : ( Model, Cmd Msg )
 init =
     ( Model Nothing 0
-    , Random.generate GameGen <| Game.generator 64 64
+    , Random.generate GameGen <| Game.generator 60 60
     )
 
 
@@ -59,18 +59,14 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AnimationFrame time ->
-            { model
-                | game =
-                    if model.frame % 1 == 0 then
-                        Maybe.map gameUpdate model.game
-                    else
-                        model.game
-                , frame = model.frame + 1
-            }
-                ! []
+            ( { model
+                | game = Maybe.map gameUpdate model.game
+              }
+            , Cmd.none
+            )
 
         GameGen newGame ->
-            { model | game = Just newGame } ! []
+            ( { model | game = Just newGame }, Cmd.none )
 
 
 gameUpdate : Game -> Game
@@ -81,58 +77,61 @@ gameUpdate game =
     }
 
 
-clearScreen : Command
+clearScreen : Commands
 clearScreen =
-    batch
-        [ fillStyle (Color.rgba 255 255 255 0.5)
-        , fillRect 0 0 canvasWidth canvasHeight
-        ]
+    Canvas.empty
+        |> fillStyle (CanvasColor.rgba 255 255 255 0.1)
+        |> fillRect 0 0 canvasWidth canvasHeight
 
 
 view : Model -> Html Msg
 view model =
     Html.div []
-        [ element
+        [ Canvas.element
             (round canvasWidth)
             (round canvasHeight)
-            [ style [ ( "border", "1px black solid" ) ]
+            [ style "border" "1px black solid"
             ]
-            [ clearScreen
-            , model.game
-                |> Maybe.map gameView
-                |> Maybe.withDefault []
-                |> Canvas.batch
-            ]
+            (clearScreen
+                |> gameView model.game
+            )
         ]
 
 
-gameView : Game -> List Command
-gameView { cells, width, height } =
-    let
-        cellSize =
-            ( canvasWidth / ((min width >> toFloat) height)
-            , canvasHeight / ((min width >> toFloat) height)
-            )
-    in
-        cells
-            |> List.indexedMap (,)
-            |> List.map (Tuple.mapFirst <| calcPos width height)
-            |> List.map (uncurry <| cellView cellSize)
+gameView : Maybe Game -> Commands -> Commands
+gameView game cmds =
+    case game of
+        Just { cells, width, height } ->
+            let
+                cellSize =
+                    ( canvasWidth / (min width >> toFloat) height
+                    , canvasHeight / (min width >> toFloat) height
+                    )
+            in
+            cells
+                |> List.indexedMap Tuple.pair
+                |> List.map (Tuple.mapFirst <| calcPos width height)
+                |> List.foldl (\( pos, cell ) acc -> cellView acc cellSize pos cell) cmds
+
+        Nothing ->
+            Canvas.empty
 
 
 calcPos : Int -> Int -> Int -> ( Float, Float )
 calcPos w h n =
-    ( toFloat (n % w), toFloat (n // h) )
+    ( toFloat (modBy w n)
+    , toFloat (n // h)
+    )
 
 
-cellView : ( Float, Float ) -> ( Float, Float ) -> Cell -> Command
-cellView ( w, h ) ( x, y ) cell =
-    [ Canvas.fillStyle
-        (if cell.state then
-            Color.green
-         else
-            Color.white
-        )
-    , Canvas.fillRect (x * w) (y * h) w h
-    ]
-        |> Canvas.batch
+cellView : Commands -> ( Float, Float ) -> ( Float, Float ) -> Cell -> Commands
+cellView cmds ( w, h ) ( x, y ) cell =
+    cmds
+        |> Canvas.fillStyle
+            (if cell.state then
+                CanvasColor.green
+
+             else
+                CanvasColor.white
+            )
+        |> Canvas.fillRect (x * w) (y * h) w h
